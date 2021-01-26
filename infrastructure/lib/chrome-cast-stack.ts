@@ -22,7 +22,6 @@ export class ChromeCastStack extends cdk.Stack {
 
     // The code that defines your stack goes here
     const websiteBucket = new s3.Bucket(this, 'WebsiteBucket', {
-      websiteIndexDocument: props.rootFile,
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
       bucketName: props.bucketName
@@ -33,33 +32,9 @@ export class ChromeCastStack extends cdk.Stack {
       destinationBucket: websiteBucket,
     });
 
-    const distr = this.cloudfront(websiteBucket, props);
-  }
-
-  private cloudfront(bucket: s3.Bucket, props: ChromeCastStackProps) {
     const distribution = new cloudfront.Distribution(this, 'Distribution', {
-      defaultBehavior: { origin: new origins.S3Origin(bucket) },
+      defaultBehavior: { origin: new origins.S3Origin(websiteBucket) },
       defaultRootObject: props.rootFile
     });
-    
-    const originAccessIdentity = cloudfront.OriginAccessIdentity.fromOriginAccessIdentityName(this, 'OAI', props.originAccessIdName)
-    // Option 3 (Stable): Use this version if the bucket does not have website hosting enabled.
-    const distribution_for_bucket = new cloudfront.CloudFrontWebDistribution(this, 'DistributionForBucket', {
-      
-      originConfigs: [
-        {
-          s3OriginSource: {
-            originAccessIdentity,
-            s3BucketSource: bucket,
-          },
-          behaviors : [ {isDefaultBehavior: true}]
-        }
-      ]
-    });
-
-    return {
-      distribution,
-      distribution_for_bucket
-    }
   }
 }
